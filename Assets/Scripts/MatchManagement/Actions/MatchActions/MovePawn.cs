@@ -1,0 +1,94 @@
+using System.Diagnostics;
+using System.Linq;
+
+public class MovePawn : MatchAction
+{
+    public Pawn PawnToMove;
+    public Cell CellToReach;
+
+    public MovePawn(Player actionAgent, Pawn pawnToMove, Cell cellToReach)
+    {
+        Debug.Assert(actionAgent != null);
+        Debug.Assert(pawnToMove != null);
+        Debug.Assert(cellToReach != null);
+
+        ActionAgent = actionAgent;
+        PawnToMove = pawnToMove;
+        CellToReach = cellToReach;
+    }
+
+    protected override (ActionResolveFlag, string) ResolveEffect(Match match)
+    {
+        /*
+            In this first section of the method, we only check if the movement
+            can be completed. No object modification is performed, since in case
+            of failure there should be no side-effects.
+        */
+        if (!PawnToMove.Alive)
+            return (ActionResolveFlag.ILLEGAL, "Can't move a dead Pawn");
+        if (ActionAgent.PawnInUse != null && PawnToMove != ActionAgent.PawnInUse)
+            return (ActionResolveFlag.ILLEGAL, "Can't move another Pawn");
+        if (CellToReach.Type is Wall)
+            return (ActionResolveFlag.ILLEGAL, "Can't move Pawn inside a Wall");
+
+        (var actions, var cellDist, var timelineDist) = PawnToMove.Cell.ActionsTo(CellToReach);
+        if (actions > ActionAgent.ActionsPoint)
+            return (ActionResolveFlag.ILLEGAL, "Can't move Pawn to a too far away cell");
+        if (ActionAgent.ActionsPoint == 2 && PawnToMove.Cell.Timeline != ActionAgent.Focus)
+            return (ActionResolveFlag.ILLEGAL, "Can't start the turn moving a Pawn from a timeline with no focus");
+
+        var pawnIn = match.Pawns.FirstOrDefault(p => p.Cell == CellToReach);
+        if (timelineDist > 0 && pawnIn != null)
+            return (ActionResolveFlag.ILLEGAL, "Can't move Pawn to an another timeline in an occupied cell");
+
+        var pushPawnOpt = Option<(Pawn, Cell, int, int)>.None;
+        if (pawnIn != null && pawnIn != PawnToMove)
+        {
+            // With more than 1 action we can not determine the push direction
+            if (actions != 1)
+                return (ActionResolveFlag.ILLEGAL, "Can't push another Pawn with an ambiguous direction");
+
+            var col = CellToReach.Cords.Item1;
+            var row = CellToReach.Cords.Item2;
+            (var r, var c) = (PawnToMove.Cell.Number - CellToReach.Number) switch
+            {
+                -1 => (0, 1),
+                1 => (0, -1),
+                -4 => (1, 0),
+                4 => (-1, 0),
+                _ => (0, 0)
+            };
+            pushPawnOpt = Option<(Pawn, Cell, int, int)>.Some((pawnIn, match.Map.CellAt(row + r, col + c), r, c));
+        }
+
+        var spawnPawnOpt = Option<Pawn>.None;
+        var spawnCellOpt = Option<Cell>.None;
+        if (CellToReach.Timeline.IsBefore(PawnToMove.Cell.Timeline))
+        {
+            spawnPawnOpt = match.TakePawnFromReserve(PawnToMove.Color);
+            if (!spawnPawnOpt.IsSome)
+                return (ActionResolveFlag.ILLEGAL, "Can't move back in time with no available new Pawn to spawn");
+            spawnCellOpt = Option<Cell>.Some(PawnToMove.Cell);
+        }
+
+        /*
+            If this final part of the function is reached, all checks have been
+            passed and thus the movement can be done. Now the states of the
+            objects can be altered.
+        */
+
+        ActionAgent.ActionsPoint -= actions;
+        ActionAgent.PawnInUse = PawnToMove;
+        match.TakeAction(new ChangePawnCell(ActionAgent, PawnToMove, CellToReach));
+        if (spawnPawnOpt.TryUnwrap(out var spawnPawn))
+        {
+            match.TakeAction(new SpawnPawn(ActionAgent, spawnPawn, spawnCellOpt.Unwrap(), "BACK-IN-TIME MOVEMENT"));
+        }
+        if (pushPawnOpt.TryUnwrap(out var pushTuple))
+        {
+            (var pushPawn, var pushCell, var pushR, var pushC) = pushTuple;
+            match.TakeAction(new PushPawn(ActionAgent, pushPawn, pushCell, pushR, pushC));
+        }
+        return (ActionResolveFlag.SUCCESS, "");
+    }
+}
