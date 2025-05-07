@@ -29,7 +29,7 @@ public class Match
         WhitePlayer = whitePlayer;
         WhitePlayer.Focus = Timeline.PAST;
         BlackPlayer = blackPlayer;
-        WhitePlayer.Focus = Timeline.FUTURE;
+        BlackPlayer.Focus = Timeline.FUTURE;
         ActivePlayer = WhitePlayer;
         Map.Make();
         Pawns = new Pawn[]

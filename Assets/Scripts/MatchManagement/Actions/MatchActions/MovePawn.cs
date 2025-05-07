@@ -35,7 +35,9 @@ public class MovePawn : MatchAction
         if (actions > ActionAgent.ActionsPoint)
             return (ActionResolveFlag.ILLEGAL, "Can't move Pawn to a too far away cell");
         if (ActionAgent.ActionsPoint == 2 && PawnToMove.Cell.Timeline != ActionAgent.Focus)
-            return (ActionResolveFlag.ILLEGAL, "Can't start the turn moving a Pawn from a timeline with no focus");
+            return (ActionResolveFlag.ILLEGAL, "Can't start the turn moving a "
+            + "Pawn from a timeline with no focus; current focus: "
+            +  ActionAgent.Focus.ToString());
 
         var pawnIn = match.Pawns.FirstOrDefault(p => p.Cell == CellToReach);
         if (timelineDist > 0 && pawnIn != null)
