@@ -3,56 +3,59 @@ using System.Linq;
 
 public class MovePawn : MatchAction
 {
-    public Pawn PawnToMove;
-    public Cell CellToReach;
+    public Pawn Pawn;
+    public Cell Cell;
 
     public MovePawn(Player actionAgent, Pawn pawnToMove, Cell cellToReach)
     {
+        #region integrity checks -----------------------------------------------
         Debug.Assert(actionAgent != null);
         Debug.Assert(pawnToMove != null);
         Debug.Assert(cellToReach != null);
+        #endregion -------------------------------------------------------------
 
         ActionAgent = actionAgent;
-        PawnToMove = pawnToMove;
-        CellToReach = cellToReach;
+        Pawn = pawnToMove;
+        Cell = cellToReach;
     }
 
     protected override (ActionResolveFlag, string) ResolveEffect(Match match)
     {
+        #region preconditions --------------------------------------------------
         /*
             In this first section of the method, we only check if the movement
             can be completed. No object modification is performed, since in case
             of failure there should be no side-effects.
         */
-        if (!PawnToMove.Alive)
+        if (!Pawn.Alive)
             return (ActionResolveFlag.ILLEGAL, "Can't move a dead Pawn");
-        if (ActionAgent.PawnInUse != null && PawnToMove != ActionAgent.PawnInUse)
+        if (ActionAgent.PawnInUse != null && Pawn != ActionAgent.PawnInUse)
             return (ActionResolveFlag.ILLEGAL, "Can't move another Pawn");
-        if (CellToReach.Type is Wall)
+        if (Cell.Type is Wall)
             return (ActionResolveFlag.ILLEGAL, "Can't move Pawn inside a Wall");
 
-        (var actions, var cellDist, var timelineDist) = PawnToMove.Cell.ActionsTo(CellToReach);
+        (var actions, var cellDist, var timelineDist) = Pawn.Cell.ActionsTo(Cell);
         if (actions > ActionAgent.ActionsPoint)
             return (ActionResolveFlag.ILLEGAL, "Can't move Pawn to a too far away cell");
-        if (ActionAgent.ActionsPoint == 2 && PawnToMove.Cell.Timeline != ActionAgent.Focus)
+        if (ActionAgent.ActionsPoint == 2 && Pawn.Cell.Timeline != ActionAgent.Focus)
             return (ActionResolveFlag.ILLEGAL, "Can't start the turn moving a "
             + "Pawn from a timeline with no focus; current focus: "
-            +  ActionAgent.Focus.ToString());
+            + ActionAgent.Focus.ToString());
 
-        var pawnIn = match.Pawns.FirstOrDefault(p => p.Cell == CellToReach);
+        var pawnIn = match.Pawns.FirstOrDefault(p => p.Cell == Cell);
         if (timelineDist > 0 && pawnIn != null)
             return (ActionResolveFlag.ILLEGAL, "Can't move Pawn to an another timeline in an occupied cell");
 
         var pushPawnOpt = Option<(Pawn, Cell, int, int)>.None;
-        if (pawnIn != null && pawnIn != PawnToMove)
+        if (pawnIn != null && pawnIn != Pawn)
         {
             // With more than 1 action we can not determine the push direction
             if (actions != 1)
                 return (ActionResolveFlag.ILLEGAL, "Can't push another Pawn with an ambiguous direction");
 
-            var col = CellToReach.Cords.Item1;
-            var row = CellToReach.Cords.Item2;
-            (var r, var c) = (PawnToMove.Cell.Number - CellToReach.Number) switch
+            var col = Cell.Cords.Item1;
+            var row = Cell.Cords.Item2;
+            (var r, var c) = (Pawn.Cell.Number - Cell.Number) switch
             {
                 -1 => (0, 1),
                 1 => (0, -1),
@@ -65,13 +68,14 @@ public class MovePawn : MatchAction
 
         var spawnPawnOpt = Option<Pawn>.None;
         var spawnCellOpt = Option<Cell>.None;
-        if (CellToReach.Timeline.IsBefore(PawnToMove.Cell.Timeline))
+        if (Cell.Timeline.IsBefore(Pawn.Cell.Timeline))
         {
-            spawnPawnOpt = match.TakePawnFromReserve(PawnToMove.Color);
+            spawnPawnOpt = match.TakePawnFromReserve(Pawn.Color);
             if (!spawnPawnOpt.IsSome)
                 return (ActionResolveFlag.ILLEGAL, "Can't move back in time with no available new Pawn to spawn");
-            spawnCellOpt = Option<Cell>.Some(PawnToMove.Cell);
+            spawnCellOpt = Option<Cell>.Some(Pawn.Cell);
         }
+        #endregion -------------------------------------------------------------
 
         /*
             If this final part of the function is reached, all checks have been
@@ -80,8 +84,8 @@ public class MovePawn : MatchAction
         */
 
         ActionAgent.ActionsPoint -= actions;
-        ActionAgent.PawnInUse = PawnToMove;
-        match.TakeAction(new ChangePawnCell(ActionAgent, PawnToMove, CellToReach));
+        ActionAgent.PawnInUse = Pawn;
+        match.TakeAction(new ChangePawnCell(ActionAgent, Pawn, Cell));
         if (spawnPawnOpt.TryUnwrap(out var spawnPawn))
         {
             match.TakeAction(new SpawnPawn(ActionAgent, spawnPawn, spawnCellOpt.Unwrap(), "BACK-IN-TIME MOVEMENT"));
@@ -89,6 +93,12 @@ public class MovePawn : MatchAction
         if (pushPawnOpt.TryUnwrap(out var pushTuple))
         {
             (var pushPawn, var pushCell, var pushR, var pushC) = pushTuple;
+            if (pushPawn.Color == Pawn.Color)
+            {
+                match.TakeAction(new KillPawn(ActionAgent, Pawn, "TIME PARADOX"));
+                match.TakeAction(new KillPawn(ActionAgent, pushPawn, "TIME PARADOX"));
+                return (ActionResolveFlag.SUCCESS, "");
+            }
             match.TakeAction(new PushPawn(ActionAgent, pushPawn, pushCell, pushR, pushC));
         }
         return (ActionResolveFlag.SUCCESS, "");

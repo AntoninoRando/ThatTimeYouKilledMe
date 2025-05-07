@@ -6,13 +6,19 @@ public class MapMaker : MonoBehaviour
     Map map;
     Match match;
 
+    #region EDITOR FIELDS ------------------------------------------------------
+
     [Tooltip("A single cell prefab of the map.")]
     public CellObject cellObject;
 
     [Tooltip("A generic pawn prefab.")]
     public PawnObject pawnObjectPrefab;
 
+    [Tooltip("The handler for the match using the Map this MapMaker will " +
+             "make.")]
     public MatchHandler MatchHandler;
+
+    #endregion -----------------------------------------------------------------
 
     public readonly Dictionary<Cell, CellObject> CellObjects = new();
 
@@ -73,12 +79,13 @@ public class MapMaker : MonoBehaviour
 
         (var pawn, var cell) = action switch
         {
-            MovePawn move => (move.PawnToMove, move.CellToReach),
+            MovePawn move => (move.Pawn, move.Cell),
             PushPawn push => (push.Pawn, push.Cell),
             SpawnPawn spawn => (spawn.Pawn, spawn.Cell),
+            KillPawn kill => (kill.Pawn, null),
             _ => (null, null)
         };
-        if (pawn == null && cell == null) return;
+        if (pawn == null) return;
 
         PawnObject pawnObject;
         if (action is SpawnPawn)
@@ -90,7 +97,17 @@ public class MapMaker : MonoBehaviour
             pawnObject.transform.localPosition = new(0, 0, 7);
         }
         else
+        {
             pawnObject = PawnObject.PawnObjects[pawn];
+        }
+
+        if (!pawn.Alive)
+        {
+            if (pawnObject.gameObject.activeSelf)
+                pawnObject.gameObject.SetActive(false);
+            return;
+        }
+
         var cellObj = CellObjects[cell];
         pawnObject.transform.SetParent(cellObj.transform);
         pawnObject.transform.localPosition = new(0, 0, pawnObject.transform.localPosition.z);

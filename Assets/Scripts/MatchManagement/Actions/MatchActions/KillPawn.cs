@@ -1,30 +1,51 @@
 using System.Diagnostics;
 
+/// <summary>
+/// The action of killing an <i>alive</i> and <i>in-use</i> pawn.
+/// </summary>
 public class KillPawn : MatchAction
 {
-    public Pawn PawnToKill;
-    public string KillReason;
+    #region INFO MESSAGES ------------------------------------------------------
+
+    const string MSGAlreadyDead = "Can't kill a dead Pawn";
+    const string MSGNotInUse = "Can't kill an unused Pawn";
+
+    #endregion -----------------------------------------------------------------
+
+    /// <summary>
+    /// The pawn to kill.
+    /// </summary>
+    public Pawn Pawn;
+
+    /// <summary>
+    /// Why the pawn is dying.
+    /// </summary>
+    public string Reason;
 
     public KillPawn(Player actionAgent, Pawn pawnToKill, string killReason)
     {
+        #region integrity checks -----------------------------------------------
         Debug.Assert(actionAgent != null);
         Debug.Assert(pawnToKill != null);
-        Debug.Assert(killReason != null);
+        Debug.Assert(killReason != null && killReason.Length > 0);
+        #endregion -------------------------------------------------------------
 
         ActionAgent = actionAgent;
-        PawnToKill = pawnToKill;
-        KillReason = killReason;
+        Pawn = pawnToKill;
+        Reason = killReason;
     }
 
     protected override (ActionResolveFlag, string) ResolveEffect(Match match)
     {
-        if (!PawnToKill.Alive)
-        {
-            return (ActionResolveFlag.ILLEGAL, "Can't killed a died Pawn");
-        }
+        #region preconditions --------------------------------------------------
+        if (!Pawn.Alive)
+            return (ActionResolveFlag.ILLEGAL, MSGAlreadyDead);
+        if (!Pawn.InUse)
+            return (ActionResolveFlag.ILLEGAL, MSGNotInUse);
+        #endregion -------------------------------------------------------------
 
-        PawnToKill.Alive = false;
-        PawnToKill.InUse = false;
+        Pawn.Alive = false;
+        Pawn.InUse = false;
         return (ActionResolveFlag.SUCCESS, "");
     }
 }

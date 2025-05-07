@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Linq;
 
 /// <summary>
-/// Pushes a <c>Pawn</c> into a <c>Cell</c>.
+/// Pushes a pawn into a cell or wall. In the latter case
 /// </summary>
 public class PushPawn : MatchAction
 {
@@ -13,9 +13,11 @@ public class PushPawn : MatchAction
 
     public PushPawn(Player actionAgent, Pawn pawn, Cell cell, int rowDirection, int columnDirection)
     {
+        #region integrity checks -----------------------------------------------
         Debug.Assert(actionAgent != null);
         Debug.Assert(pawn != null);
         Debug.Assert(cell != null);
+        #endregion --------------------------------------------------------------
 
         ActionAgent = actionAgent;
         Pawn = pawn;
@@ -26,15 +28,15 @@ public class PushPawn : MatchAction
 
     protected override (ActionResolveFlag, string) ResolveEffect(Match match)
     {
+        #region preconditions --------------------------------------------------
+        if (Cell.Timeline != Pawn.Cell.Timeline)
+            return (ActionResolveFlag.ILLEGAL, "Can't push a Pawn into another timeline");
+        #endregion -------------------------------------------------------------
+
         if (Cell.Type is Wall)
         {
             match.TakeAction(new KillPawn(ActionAgent, Pawn, "SQUISH"));
             return (ActionResolveFlag.SUCCESS, "");
-        }
-
-        if (Cell.Timeline != Pawn.Cell.Timeline)
-        {
-            return (ActionResolveFlag.ILLEGAL, "Can't push a Pawn into another timeline");
         }
 
         var pawnIn = match.Pawns.FirstOrDefault(p => p.Cell == Cell);

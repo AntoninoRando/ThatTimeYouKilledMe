@@ -1,9 +1,6 @@
 using System.Diagnostics;
 using System.Linq;
 
-/// <summary>
-/// The action of spawning an <i>alive</i> pawn from a player's <i>reserve</i>.
-/// </summary>
 public class MoveFocus : MatchAction
 {
     #region INFO MESSAGES ------------------------------------------------------
@@ -18,7 +15,9 @@ public class MoveFocus : MatchAction
 
     public MoveFocus(Player actionAgent, Timeline focus)
     {
+        #region integrity checks -----------------------------------------------
         Debug.Assert(actionAgent != null);
+        #endregion -------------------------------------------------------------
 
         ActionAgent = actionAgent;
         Focus = focus;
