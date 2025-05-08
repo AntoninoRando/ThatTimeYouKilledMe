@@ -6,10 +6,8 @@ using System.Diagnostics;
 public class KillPawn : MatchAction
 {
     #region INFO MESSAGES ------------------------------------------------------
-
     const string MSGAlreadyDead = "Can't kill a dead Pawn";
     const string MSGNotInUse = "Can't kill an unused Pawn";
-
     #endregion -----------------------------------------------------------------
 
     /// <summary>

@@ -58,9 +58,8 @@ public class Match
         ActionEnd?.Invoke(action);
 
         if (action.Flag == ActionResolveFlag.ILLEGAL)
-        {
             return (action.Flag, action.Details);
-        }
+
         if (action is MoveFocus)
         {
             // End turn
@@ -68,6 +67,12 @@ public class Match
             ActivePlayer.ActionsPoint = 2;
             ActivePlayer = ActivePlayer == WhitePlayer ? BlackPlayer : WhitePlayer;
         }
+        if (!AnyPawnInTimeline(ActivePlayer.Focus, ActivePlayer))
+        {
+            // Nothing else to do if there is no pawn to move
+            ActivePlayer.ActionsPoint = 0;
+        }
+
         return (action.Flag, action.Details);
     }
 
@@ -80,6 +85,19 @@ public class Match
     public Option<Pawn> TakePawnFromReserve(PawnColor color)
     {
         var pawn = Pawns.FirstOrDefault(p => p.Color == color && !p.InUse && p.Alive);
-        return pawn != null? Option<Pawn>.Some(pawn) : Option<Pawn>.None;
+        return pawn != null ? Option<Pawn>.Some(pawn) : Option<Pawn>.None;
+    }
+
+    public static bool PawnInTimeline(Pawn pawn, Timeline timeline, Player owner)
+    {
+        if (!pawn.Alive || !pawn.InUse) return false;
+        if (pawn.Cell.Timeline != timeline) return false;
+        if (pawn.Owner != owner) return false;
+        return true;
+    }
+
+    public bool AnyPawnInTimeline(Timeline timeline, Player owner)
+    {
+        return Pawns.Any(x => PawnInTimeline(x, timeline, owner));
     }
 }

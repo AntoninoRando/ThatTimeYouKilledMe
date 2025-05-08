@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 
 /// <summary>
 /// The action of spawning an <i>alive</i> pawn from a player's <i>reserve</i>.
@@ -7,6 +8,12 @@ using System.Diagnostics;
 /// </summary>
 public class SpawnPawn : MatchAction
 {
+    #region INFO MESSAGES ------------------------------------------------------
+    const string MSGAlreadyInUse = "Can't spawn an already in-use Pawn";
+    const string MSGDead = "Can't spawn a dead Pawn";
+    const string MSGOccupied = "Can't spawn a Pawn in an occupied cell";
+    #endregion -----------------------------------------------------------------
+
     public Pawn Pawn;
     public Cell Cell;
     public string Reason;
@@ -30,12 +37,13 @@ public class SpawnPawn : MatchAction
     {
         #region preconditions --------------------------------------------------
         if (Pawn.InUse)
-            return (ActionResolveFlag.ILLEGAL, "Can't spawn an already in-use Pawn");
+            return (ActionResolveFlag.ILLEGAL, MSGAlreadyInUse);
         if (!Pawn.Alive)
-            return (ActionResolveFlag.ILLEGAL, "Can't spawn a dead Pawn");
+            return (ActionResolveFlag.ILLEGAL, MSGDead);
+        if (match.Pawns.Any(x => x.Cell == Cell))
+            return (ActionResolveFlag.ILLEGAL, MSGOccupied);
         #endregion -------------------------------------------------------------
-
-        // TODO add checks the spawn cell is not occupied.
+        
         Pawn.InUse = true;
         return match.TakeAction(new ChangePawnCell(ActionAgent, Pawn, Cell));
     }

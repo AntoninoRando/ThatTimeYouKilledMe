@@ -1,14 +1,11 @@
 using System.Diagnostics;
-using System.Linq;
 
 public class MoveFocus : MatchAction
 {
     #region INFO MESSAGES ------------------------------------------------------
-
     const string MSGRoundEnd = "Wait until the end of the round";
     const string MSGSameTimeline = "New focus must be on a different timeline";
     const string MSGNoPawns = "There are no Pawns to move in that timeline";
-
     #endregion -----------------------------------------------------------------
 
     public Timeline Focus;
@@ -30,19 +27,11 @@ public class MoveFocus : MatchAction
             return (ActionResolveFlag.ILLEGAL, MSGRoundEnd);
         if (Focus == ActionAgent.Focus)
             return (ActionResolveFlag.ILLEGAL, MSGSameTimeline);
-        if (!match.Pawns.Any(x => PawnInTimeline(x, Focus, ActionAgent)))
+        if (!match.AnyPawnInTimeline(Focus, ActionAgent))
             return (ActionResolveFlag.ILLEGAL, MSGNoPawns);
         #endregion -------------------------------------------------------------
 
         ActionAgent.Focus = Focus;
         return (ActionResolveFlag.SUCCESS, "");
-    }
-
-    bool PawnInTimeline(Pawn pawn, Timeline timeline, Player owner)
-    {
-        if (!pawn.Alive || !pawn.InUse) return false;
-        if (pawn.Cell.Timeline != timeline) return false;
-        if (pawn.Owner != owner) return false;
-        return true;
     }
 }
