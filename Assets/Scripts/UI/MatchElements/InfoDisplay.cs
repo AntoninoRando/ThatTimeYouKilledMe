@@ -16,7 +16,11 @@ public class InfoDisplay : MonoBehaviour
 
     void UpdateText(MatchAction _)
     {
-        text.text = $"Actions: {matchHandler.Match.ActivePlayer.ActionsPoint}" +
+        string player = matchHandler.Match.ActivePlayer == matchHandler.Match.WhitePlayer
+            ? "White"
+            : "Black";
+        text.text = $"Player: {player}" +
+                    $"\nActions: {matchHandler.Match.ActivePlayer.ActionsPoint}" +
                     $"\nFocus: {matchHandler.Match.ActivePlayer.Focus}";
     }
 }
