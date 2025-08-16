@@ -3,11 +3,17 @@ using UnityEngine;
 
 public class MapMaker : MonoBehaviour
 {
+    #region FIELDS -------------------------------------------------------------
     Map map;
     Match match;
+    public readonly Dictionary<Cell, CellObject> CellObjects = new();
+    GameObject whiteFocusIndicator;
+    GameObject blackFocusIndicator;
+    #endregion -----------------------------------------------------------------
+
+
 
     #region EDITOR FIELDS ------------------------------------------------------
-
     [Tooltip("A single cell prefab of the map.")]
     public CellObject cellObject;
 
@@ -17,13 +23,11 @@ public class MapMaker : MonoBehaviour
     [Tooltip("The handler for the match using the Map this MapMaker will " +
              "make.")]
     public MatchHandler MatchHandler;
-
     #endregion -----------------------------------------------------------------
 
-    public readonly Dictionary<Cell, CellObject> CellObjects = new();
+
 
     #region UNITY LIFECYCLE ----------------------------------------------------
-
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -71,8 +75,9 @@ public class MapMaker : MonoBehaviour
             }
         }
 
+        CreateFocusIndicators();
     }
-
+    
     void UpdatePawnsObjectsPositions(MatchAction action)
     {
         if (action.Flag != ActionResolveFlag.SUCCESS) return;
@@ -113,5 +118,46 @@ public class MapMaker : MonoBehaviour
         pawnObject.transform.localPosition = new(0, 0, pawnObject.transform.localPosition.z);
     }
 
+    void CreateFocusIndicators()
+    {
+        whiteFocusIndicator = CreateIndicator("WhiteFocusIndicator", Color.white);
+        blackFocusIndicator = CreateIndicator("BlackFocusIndicator", Color.black);
+        match.ActionEnd += UpdateFocusIndicators;
+        UpdateFocusIndicators(null);
+    }
+
+    GameObject CreateIndicator(string name, Color color)
+    {
+        var go = new GameObject(name);
+        var sr = go.AddComponent<SpriteRenderer>();
+        var texture = new Texture2D(32, 16);
+        for (int x = 0; x < texture.width; x++)
+            for (int y = 0; y < texture.height; y++)
+                texture.SetPixel(x, y, color);
+        texture.Apply();
+        sr.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 16);
+        sr.sortingOrder = 10;
+        return go;
+    }
+
+    void UpdateFocusIndicators(MatchAction _)
+    {
+        if (whiteFocusIndicator == null || blackFocusIndicator == null) return;
+        whiteFocusIndicator.transform.position = new(GetTimelineCenterX(match.WhitePlayer.Focus), 0.7f, -1);
+        blackFocusIndicator.transform.position = new(GetTimelineCenterX(match.BlackPlayer.Focus), -6.2f, -1);
+    }
+
+    float GetTimelineCenterX(Timeline timeline)
+    {
+        int index = timeline switch
+        {
+            Timeline.PAST => 0,
+            Timeline.PRESENT => 1,
+            Timeline.FUTURE => 2,
+            _ => 0
+        };
+        float centerColumn = 2.5f + index * 6f;
+        return centerColumn * 1.1f;
+    }
     #endregion -----------------------------------------------------------------
 }
