@@ -3,11 +3,17 @@ using UnityEngine;
 
 public class MapMaker : MonoBehaviour
 {
+    #region FIELDS -------------------------------------------------------------
     Map map;
     Match match;
+    public readonly Dictionary<Cell, CellObject> CellObjects = new();
+    GameObject whiteFocusIndicator;
+    GameObject blackFocusIndicator;
+    #endregion -----------------------------------------------------------------
+
+
 
     #region EDITOR FIELDS ------------------------------------------------------
-
     [Tooltip("A single cell prefab of the map.")]
     public CellObject cellObject;
 
@@ -17,16 +23,11 @@ public class MapMaker : MonoBehaviour
     [Tooltip("The handler for the match using the Map this MapMaker will " +
              "make.")]
     public MatchHandler MatchHandler;
-
     #endregion -----------------------------------------------------------------
 
-    public readonly Dictionary<Cell, CellObject> CellObjects = new();
 
-    GameObject whiteFocusIndicator;
-    GameObject blackFocusIndicator;
 
     #region UNITY LIFECYCLE ----------------------------------------------------
-
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -76,7 +77,7 @@ public class MapMaker : MonoBehaviour
 
         CreateFocusIndicators();
     }
-
+    
     void UpdatePawnsObjectsPositions(MatchAction action)
     {
         if (action.Flag != ActionResolveFlag.SUCCESS) return;
@@ -158,6 +159,5 @@ public class MapMaker : MonoBehaviour
         float centerColumn = 2.5f + index * 6f;
         return centerColumn * 1.1f;
     }
-
     #endregion -----------------------------------------------------------------
 }
