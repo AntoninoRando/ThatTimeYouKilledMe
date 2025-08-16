@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Simple main menu that displays buttons to start the game, open settings, or quit.
+/// Simple main menu that displays buttons to start the game, open settings, or 
+/// quit.
 /// </summary>
 public class MainMenu : MonoBehaviour
 {
