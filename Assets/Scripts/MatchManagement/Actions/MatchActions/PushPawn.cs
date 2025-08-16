@@ -2,22 +2,37 @@ using System.Diagnostics;
 using System.Linq;
 
 /// <summary>
-/// Pushes a pawn into a cell or wall. In the latter case
+/// Pushes a pawn into a cell or wall. In the latter case, the pawn is killed.
+/// If the cell contains another pawn, it is pushed in the same direction. If
+/// the other pawn is of the same color, both pawns are killed due to a time
+/// paradox.
 /// </summary>
 public class PushPawn : MatchAction
 {
+    #region INFO MESSAGES ------------------------------------------------------
+    const string MSGNoTimelinePush = "Can't push a Pawn into another timeline";
+    #endregion -----------------------------------------------------------------
+
+
+
+    #region FIELDS -------------------------------------------------------------
     public Pawn Pawn;
     public Cell Cell;
     public int RowDirection;
     public int ColumnDirection;
+    #endregion -----------------------------------------------------------------
 
+
+
+    #region CONSTRUCTORS -------------------------------------------------------
     public PushPawn(Player actionAgent, Pawn pawn, Cell cell, int rowDirection, int columnDirection)
     {
-        #region integrity checks -----------------------------------------------
+        #region integrity checks
         Debug.Assert(actionAgent != null);
         Debug.Assert(pawn != null);
         Debug.Assert(cell != null);
-        #endregion --------------------------------------------------------------
+        #endregion
+
 
         ActionAgent = actionAgent;
         Pawn = pawn;
@@ -25,14 +40,19 @@ public class PushPawn : MatchAction
         RowDirection = rowDirection;
         ColumnDirection = columnDirection;
     }
+    #endregion -----------------------------------------------------------------
 
+
+
+    #region MATCH-ACTION OVERRIDES ---------------------------------------------
     protected override (ActionResolveFlag, string) ResolveEffect(Match match)
     {
-        #region preconditions --------------------------------------------------
+        #region preconditions
         if (Cell.Timeline != Pawn.Cell.Timeline)
-            return (ActionResolveFlag.ILLEGAL, "Can't push a Pawn into another timeline");
-        #endregion -------------------------------------------------------------
+            return (ActionResolveFlag.ILLEGAL, MSGNoTimelinePush);
+        #endregion
 
+        
         if (Cell.Type is Wall)
         {
             match.TakeAction(new KillPawn(ActionAgent, Pawn, "SQUISH"));
@@ -63,4 +83,5 @@ public class PushPawn : MatchAction
         match.TakeAction(new ChangePawnCell(ActionAgent, Pawn, Cell));
         return (ActionResolveFlag.SUCCESS, "");
     }
+    #endregion -----------------------------------------------------------------
 }

@@ -2,7 +2,8 @@ using System;
 using System.Diagnostics;
 
 public class FollowPoint
-{
+{  
+    #region FIELDS -------------------------------------------------------------
     public float DragSpeed;
     public float MinDragSpeed;
     public float MaxDragSpeed;
@@ -12,9 +13,11 @@ public class FollowPoint
 
     public bool IsActive => isDragging;
     public Func<(float, float, float)> PivotGenerator;
+    #endregion -----------------------------------------------------------------
+
+
 
     #region CONSTRUCTORS -------------------------------------------------------
-
     public FollowPoint(float MinDragSpeed, float MaxDragSpeed)
     {
         this.MinDragSpeed = MinDragSpeed;
@@ -28,9 +31,10 @@ public class FollowPoint
         MaxDragSpeed = float.NaN;
         DragSpeed = float.NaN;
     }
-
     #endregion -----------------------------------------------------------------
 
+
+    
     /// <summary>
     /// Starts the movement of an origin point.
     /// </summary>

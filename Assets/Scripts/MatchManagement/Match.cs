@@ -61,17 +61,9 @@ public class Match
             return (action.Flag, action.Details);
 
         if (action is MoveFocus)
-        {
-            // End turn
-            ActivePlayer.PawnInUse = null;
-            ActivePlayer.ActionsPoint = 2;
-            ActivePlayer = ActivePlayer == WhitePlayer ? BlackPlayer : WhitePlayer;
-        }
-        if (!AnyPawnInTimeline(ActivePlayer.Focus, ActivePlayer))
-        {
-            // Nothing else to do if there is no pawn to move
-            ActivePlayer.ActionsPoint = 0;
-        }
+            TakeAction(new EndTurn(ActivePlayer));
+        if (action is not CheckStallAndResolve) // Avoid recursion
+            TakeAction(new CheckStallAndResolve(ActivePlayer));
 
         return (action.Flag, action.Details);
     }

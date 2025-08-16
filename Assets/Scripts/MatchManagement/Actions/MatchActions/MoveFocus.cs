@@ -1,5 +1,8 @@
 using System.Diagnostics;
 
+/// <summary>
+/// The action of moving the focus of a Player to a different Timeline.
+/// </summary>
 public class MoveFocus : MatchAction
 {
     #region INFO MESSAGES ------------------------------------------------------
@@ -8,30 +11,44 @@ public class MoveFocus : MatchAction
     const string MSGNoPawns = "There are no Pawns to move in that timeline";
     #endregion -----------------------------------------------------------------
 
-    public Timeline Focus;
 
+
+    #region FIELDS -------------------------------------------------------------
+    public Timeline Focus;
+    #endregion -----------------------------------------------------------------
+
+
+
+    #region CONSTRUCTORS -------------------------------------------------------
     public MoveFocus(Player actionAgent, Timeline focus)
     {
-        #region integrity checks -----------------------------------------------
+        #region integrity checks
         Debug.Assert(actionAgent != null);
-        #endregion -------------------------------------------------------------
+        #endregion
+
 
         ActionAgent = actionAgent;
         Focus = focus;
     }
+    #endregion -----------------------------------------------------------------
 
+
+
+    #region MATCH-ACTION OVERRIDES ---------------------------------------------
     protected override (ActionResolveFlag, string) ResolveEffect(Match match)
     {
-        #region preconditions --------------------------------------------------
+        #region preconditions
         if (ActionAgent.ActionsPoint > 0)
             return (ActionResolveFlag.ILLEGAL, MSGRoundEnd);
         if (Focus == ActionAgent.Focus)
             return (ActionResolveFlag.ILLEGAL, MSGSameTimeline);
         if (!match.AnyPawnInTimeline(Focus, ActionAgent))
             return (ActionResolveFlag.ILLEGAL, MSGNoPawns);
-        #endregion -------------------------------------------------------------
+        #endregion
+        
 
         ActionAgent.Focus = Focus;
         return (ActionResolveFlag.SUCCESS, "");
     }
+    #endregion -----------------------------------------------------------------
 }

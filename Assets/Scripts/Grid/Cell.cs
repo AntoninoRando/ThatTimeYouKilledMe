@@ -4,6 +4,7 @@ using UnityEngine;
 
 public sealed class Cell
 {
+    #region FIELDS -------------------------------------------------------------
     Timeline timeline;
     public Timeline Timeline => timeline;
 
@@ -19,17 +20,20 @@ public sealed class Cell
 
     static readonly List<Cell> allCells = new();
     public static List<Cell> All => allCells;
+    #endregion -----------------------------------------------------------------
+    
+
 
     #region CONSTRUCTOR --------------------------------------------------------
-
     public Cell()
     {
         allCells.Add(this);
     }
-
     #endregion -----------------------------------------------------------------
-    #region PUBLIC METHODS -----------------------------------------------------
 
+
+
+    #region PUBLIC METHODS -----------------------------------------------------
     /// <summary>
     /// Gives a timeline and number to this cell. Use this method for cells that
     /// aren't walls.
@@ -85,6 +89,5 @@ public sealed class Cell
 
         return (cellDistance + timelineDistance, cellDistance, timelineDistance);
     }
-
     #endregion -----------------------------------------------------------------
 }

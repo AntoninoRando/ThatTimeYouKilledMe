@@ -1,31 +1,25 @@
 using System.Diagnostics;
 
 /// <summary>
-/// The action of changing the cell of a Pawn without any check. This is an
-/// atomic action used by other actions to change the cell of a Pawn.
+/// The action of ending a Player's turn. If this action
 /// </summary>
-public class ChangePawnCell : MatchAction
+public class EndTurn : MatchAction
 {
-    #region FIELDS -------------------------------------------------------------
-    public Pawn Pawn;
-    public Cell Cell;
+    #region INFO MESSAGES ------------------------------------------------------
+    const string MSGNotTurn = "Not your turn";
     #endregion -----------------------------------------------------------------
 
 
 
     #region CONSTRUCTORS -------------------------------------------------------
-    public ChangePawnCell(Player actionAgent, Pawn pawn, Cell cell)
+    public EndTurn(Player actionAgent)
     {
         #region integrity checks
         Debug.Assert(actionAgent != null);
-        Debug.Assert(pawn != null);
-        Debug.Assert(cell != null);
         #endregion
-        
+
 
         ActionAgent = actionAgent;
-        Pawn = pawn;
-        Cell = cell;
     }
     #endregion -----------------------------------------------------------------
 
@@ -34,7 +28,16 @@ public class ChangePawnCell : MatchAction
     #region MATCH-ACTION OVERRIDES ---------------------------------------------
     protected override (ActionResolveFlag, string) ResolveEffect(Match match)
     {
-        Pawn.Cell = Cell;
+        #region preconditions
+        if (match.ActivePlayer != ActionAgent)
+            return (ActionResolveFlag.ILLEGAL, MSGNotTurn);
+        #endregion
+
+        
+        ActionAgent.PawnInUse = null;
+        ActionAgent.ActionsPoint = 2;
+        match.ActivePlayer = ActionAgent == match.WhitePlayer ?
+                             match.BlackPlayer : match.WhitePlayer;
         return (ActionResolveFlag.SUCCESS, "");
     }
     #endregion -----------------------------------------------------------------
